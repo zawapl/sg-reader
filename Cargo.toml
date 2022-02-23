@@ -1,10 +1,14 @@
 [package]
 name = "sg_reader"
+description = "Library for reading images in sg3 files."
 version = "0.0.1"
 authors = ["Jakub Zawadzki <kuba.zaw@gmail.com>"]
 edition = "2018"
 license = "MIT"
+repository = "https://github.com/zawapl/sg-reader"
+categories = []
 readme = "README.md"
+keywords = ["sg3"]
 
 [dependencies]
 
