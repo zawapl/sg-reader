@@ -1,0 +1,14 @@
+[package]
+name = "sg_reader"
+version = "0.0.1"
+authors = ["Jakub Zawadzki <kuba.zaw@gmail.com>"]
+edition = "2018"
+license = "MIT"
+readme = "README.md"
+
+[dependencies]
+
+
+[dev-dependencies]
+druid = { version = "0.7.0", features = [ "im" ] } # https://github.com/linebender/druid/tree/ed4f9ef0e763d8396ef2fb7facd8ea4ba541c41e
+piet-common = { version = "0.3.2", features = ["png"] }

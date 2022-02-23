@@ -1,0 +1,57 @@
+use std::io::Read;
+use std::io::Result;
+use std::str;
+
+pub trait ReadHelper {
+
+    fn read_u8(&mut self) -> Result<u8>;
+
+    fn read_u16_le(&mut self) -> Result<u16>;
+
+    fn read_u32_le(&mut self) -> Result<u32>;
+
+    fn read_i32_le(&mut self) -> Result<i32>;
+
+    fn read_utf(&mut self, length: usize) -> Result<String>;
+    
+}
+
+impl <R: Read> ReadHelper for R {
+
+    fn read_u8(&mut self) -> Result<u8> {
+        let mut tmp = [0; 1];
+        self.read_exact(&mut tmp)?;
+        return Ok(tmp[0]);
+    }
+
+    fn read_u16_le(&mut self) -> Result<u16> {
+        let mut tmp = [0; 2];
+        self.read_exact(&mut tmp)?;
+        return Ok(u16::from_le_bytes(tmp));
+    }
+
+    fn read_u32_le(&mut self) -> Result<u32> {
+        let mut tmp = [0; 4];
+        self.read_exact(&mut tmp)?;
+        return Ok(u32::from_le_bytes(tmp));
+    }
+
+    fn read_i32_le(&mut self) -> Result<i32> {
+        let mut tmp = [0; 4];
+        self.read_exact(&mut tmp)?;
+        return Ok(i32::from_le_bytes(tmp));
+    }
+
+    fn read_utf(&mut self, length: usize) -> Result<String> {
+        let mut tmp = vec![0; length];
+
+        self.read_exact(&mut tmp)?;
+
+        return Ok(String::from(
+            str::from_utf8(&tmp)
+                .expect("Bytes could not be translated into a UTF-8 string.")
+                .trim_end_matches(char::from(0))
+        ));
+    }
+    
+}
