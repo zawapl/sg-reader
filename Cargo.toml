@@ -1,6 +1,6 @@
 [package]
 name = "sg_reader"
-description = "Library for reading images in sg3 files."
+description = "Library for reading images in sg3 files used by some citybuilding games."
 version = "0.0.1"
 authors = ["Jakub Zawadzki <kuba.zaw@gmail.com>"]
 edition = "2018"

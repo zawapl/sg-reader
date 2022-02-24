@@ -122,8 +122,8 @@ impl SgFileMetadata {
             let invert_offset = image.invert_offset;
             if invert_offset != 0 {
                 image = images[(i as i32 + invert_offset) as usize].clone();
+                image.id = i;
                 image.invert_offset = invert_offset;
-                image.alpha_offset = 0;
             }
 
             images.push(image);
