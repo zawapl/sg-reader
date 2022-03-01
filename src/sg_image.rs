@@ -14,22 +14,31 @@ const ISOMETRIC_LARGE_TILE_BYTES: u16 = 3200;
 
 /// Metadata of an image.
 ///
-/// Some bytes from the metadata are unknown and are omitted from the struct.
-#[derive(Debug, Clone)]
+/// Some bytes from the metadata are of unknown meaning.
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct SgImageMetadata {
     pub id: u32,
     pub offset: u32,
     pub length: u32,
     pub uncompressed_length: u32,
-    // 4 zero bytes
+    pub zeroes: [u8; 4],
     pub invert_offset: i32,
     pub width: u16,
     pub height: u16,
-    // 26 unknown bytes
+    pub unknown_a: [u16; 3],
+    pub anim_sprites: u16,
+    pub unknown_b: u16,
+    pub x_offset: u16,
+    pub y_offset: u16,
+    pub unknown_c: [u8; 10],
+    pub is_reversible: u8,
+    pub unknown_d: u8,
     pub image_type: u16,
     pub flags: [u8; 4],
     pub bitmap_id: u8,
-    // 3 bytes + 4 zero bytes
+    pub unknown_e: u8,
+    pub anim_speed_id: u8,
+    pub unknown_f: [u8; 5],
     pub alpha_offset: u32,
     pub alpha_length: u32,
 }
@@ -39,16 +48,24 @@ impl SgImageMetadata {
         let offset = reader.read_u32_le()?;
         let length = reader.read_u32_le()?;
         let uncompressed_length = reader.read_u32_le()?;
-        reader.seek_relative(4)?;
+        let zeroes = reader.read_bytes()?;
         let invert_offset = reader.read_i32_le()?;
         let width = reader.read_u16_le()?;
         let height = reader.read_u16_le()?;
-        reader.seek_relative(26)?;
+        let unknown_a = [reader.read_u16_le()?, reader.read_u16_le()?, reader.read_u16_le()?];
+        let anim_sprites = reader.read_u16_le()?;
+        let unknown_b = reader.read_u16_le()?;
+        let x_offset = reader.read_u16_le()?;
+        let y_offset = reader.read_u16_le()?;
+        let unknown_c = reader.read_bytes()?;
+        let is_reversible = reader.read_u8()?;
+        let unknown_d = reader.read_u8()?;
         let image_type = reader.read_u16_le()?;
-        let mut flags = [0; 4];
-        reader.read_exact(&mut flags)?;
+        let flags = reader.read_bytes()?;
         let bitmap_id = reader.read_u8()?;
-        reader.seek_relative(7)?;
+        let unknown_e = reader.read_u8()?;
+        let anim_speed_id = reader.read_u8()?;
+        let unknown_f = reader.read_bytes()?;
         let alpha_offset = if include_alpha { reader.read_u32_le()? } else { 0 };
         let alpha_length = if include_alpha { reader.read_u32_le()? } else { 0 };
 
@@ -57,12 +74,24 @@ impl SgImageMetadata {
             offset,
             length,
             uncompressed_length,
+            zeroes,
             invert_offset,
             width,
             height,
+            unknown_a,
+            anim_sprites,
+            unknown_b,
+            x_offset,
+            y_offset,
+            unknown_c,
+            is_reversible,
+            unknown_d,
             image_type,
             flags,
             bitmap_id,
+            unknown_e,
+            anim_speed_id,
+            unknown_f,
             alpha_offset,
             alpha_length,
         };
@@ -126,6 +155,14 @@ impl SgImageMetadata {
     }
 
     fn load_isometric_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>) -> Result<()> {
+        let current_position = reader.stream_position()?;
+
+        let relative_position = self.offset as i64 - current_position as i64;
+
+        if relative_position != 0 {
+            reader.seek_relative(relative_position)?;
+        }
+
         self.load_isometric_base(image_builder, reader)?;
         self.load_transparent_image(image_builder, reader, self.length - self.uncompressed_length, self.uncompressed_length + self.offset)?;
         Ok(())
@@ -162,8 +199,16 @@ impl SgImageMetadata {
         Ok(())
     }
 
-    fn load_sprite_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, data: &mut BufReader<R>) -> Result<()> {
-        self.load_transparent_image(image_builder, data, self.length, self.offset)?;
+    fn load_sprite_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>) -> Result<()> {
+        let current_position = reader.stream_position()?;
+
+        let relative_position = self.offset as i64 - current_position as i64;
+
+        if relative_position != 0 {
+            reader.seek_relative(relative_position)?;
+        }
+
+        self.load_transparent_image(image_builder, reader, self.length, self.offset)?;
         Ok(())
     }
 
@@ -213,14 +258,6 @@ impl SgImageMetadata {
     }
 
     fn load_transparent_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>, length: u32, offset: u32) -> Result<()> {
-        let current_position = reader.stream_position()?;
-
-        let relative_position = self.offset as i64 - current_position as i64;
-
-        if relative_position != 0 {
-            reader.seek_relative(relative_position)?;
-        }
-
         let mut x = 0;
         let mut y = 0;
         let width = self.width;
@@ -232,7 +269,7 @@ impl SgImageMetadata {
                 // The next number is pixels to skip
                 x += reader.read_u8()? as u16;
 
-                // Change the while to mods and divides
+                // TODO Change the while to mods and divides?
                 while x >= width {
                     y += 1;
                     x -= width;

@@ -19,7 +19,7 @@ fn main() {
         let bitmap_id = image.bitmap_id as usize;
 
         if !readers.contains_key(&bitmap_id) {
-            let path_buf = &sg_file.get_555_file_path(bitmap_id);
+            let path_buf = &sg_file.get_555_file_path(bitmap_id, image.is_external());
             let msg = format!("Could not open file {}", path_buf.display());
             let reader = BufReader::new(File::open(path_buf).expect(msg.as_str()));
             readers.insert(bitmap_id, reader);

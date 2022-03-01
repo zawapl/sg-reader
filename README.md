@@ -4,6 +4,8 @@
 
 A library for reading sg3 files used in Sierra city building games (Cesar 3, Pharaoh, Zeus, Emperor). Inspired by https://github.com/lclarkmichalek/sgreader.
 
+Documentation of the format can be found at https://github.com/bvschaik/citybuilding-tools/wiki/SG-file-format#image-data.
+
 Basic usage:
 ```rust
 // Load metadata contained in the specified file

@@ -10,9 +10,8 @@ use crate::utils::ReadHelper;
 ///
 /// All images in a bitmap have their data stored in the same file.
 ///
-/// Some bytes from the metadata are unknown and are omitted from the struct.
-///
-#[derive(Debug, Clone)]
+/// Some bytes from the metadata are of unknown meaning.
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct SgBitmapMetadata {
     pub id: u32,
     pub external_filename: String,
@@ -23,16 +22,16 @@ pub struct SgBitmapMetadata {
     pub start_index: u32,
     pub end_index: u32,
     pub image_id: u32, // u32 between start & end - id of an image?
-    // pub unknown1: u32, // unknown purpose
-    // pub unknown2: u32, // unknown purpose
-    // pub unknown3: u32, // unknown purpose
-    // pub unknown4: u32, // unknown purpose
+    pub unknown_a: u32, // unknown purpose
+    pub unknown_b: u32, // unknown purpose
+    pub unknown_c: u32, // unknown purpose
+    pub unknown_d: u32, // unknown purpose
     pub image_width: u32, // real width? - correspnding to image width
     pub image_height: u32, // real height? - corresponding to image height
     pub file_size_555: u32, // if non-zero -> internal image
     pub total_file_size: u32, // if non-zero -> internal image
     pub file_size_external: u32,// if non-zero -> internal image
-    // 24 unknown bytes
+    pub unknown_e: [u8; 24] // 24 unknown bytes
 }
 
 impl SgBitmapMetadata {
@@ -45,17 +44,16 @@ impl SgBitmapMetadata {
         let start_index = reader.read_u32_le()?;
         let end_index = reader.read_u32_le()?;
         let image_id = reader.read_u32_le()?;
-        let _unknown1 = reader.read_u32_le()?;
-        let _unknown2 = reader.read_u32_le()?;
-        let _unknown3 = reader.read_u32_le()?;
-        let _unknown4 = reader.read_u32_le()?;
+        let unknown_a = reader.read_u32_le()?;
+        let unknown_b = reader.read_u32_le()?;
+        let unknown_c = reader.read_u32_le()?;
+        let unknown_d = reader.read_u32_le()?;
         let image_width = reader.read_u32_le()?;
         let image_height = reader.read_u32_le()?;
         let file_size_555 = reader.read_u32_le()?;
         let total_file_size = reader.read_u32_le()?;
         let file_size_external = reader.read_u32_le()?;
-
-        reader.seek_relative(24)?;
+        let unknown_e = reader.read_bytes()?;
 
         let sg_bitmap_metadata = SgBitmapMetadata {
             id,
@@ -67,11 +65,16 @@ impl SgBitmapMetadata {
             start_index,
             end_index,
             image_id,
+            unknown_a,
+            unknown_b,
+            unknown_c,
+            unknown_d,
             image_width,
             image_height,
             file_size_555,
             total_file_size,
             file_size_external,
+            unknown_e,
         };
 
         return Ok(sg_bitmap_metadata);

@@ -13,6 +13,8 @@ pub trait ReadHelper {
     fn read_i32_le(&mut self) -> Result<i32>;
 
     fn read_utf(&mut self, length: usize) -> Result<String>;
+
+    fn read_bytes<const LENGTH: usize>(&mut self) -> Result<[u8; LENGTH]> where [u8;LENGTH]: Default;
     
 }
 
@@ -53,5 +55,11 @@ impl <R: Read> ReadHelper for R {
                 .trim_end_matches(char::from(0))
         ));
     }
-    
+
+    fn read_bytes<const LENGTH: usize>(&mut self) -> Result<[u8; LENGTH]> where [u8; LENGTH]: Default {
+        let mut result: [u8; LENGTH] = Default::default();
+        self.read_exact(&mut result)?;
+        return Ok(result);
+    }
+
 }

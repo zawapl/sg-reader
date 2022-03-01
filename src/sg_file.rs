@@ -12,15 +12,14 @@ use crate::ReadHelper;
 /// Contains metadata of the images retrieved from the sg file.
 /// Can be used to get information about the bitmaps and images this file describes.
 ///
-/// Meaning of some of the bytes is not known and those are not included in the struct.
-///
-#[derive(Debug, Clone)]
+/// Some bytes from the metadata are of unknown meaning.
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct SgFileMetadata {
     pub folder: String,
     pub filename: String,
     pub file_size: u32,
     pub version: u32,
-    // pub unknown: u32,
+    pub unknown: u32,
     pub max_image_count: u32,
     pub bitmap_records_without_system: u32,
     pub total_file_size: u32,
@@ -43,7 +42,7 @@ impl SgFileMetadata {
 
         Self::check_header(&version, &file_size, &metadata.len())?;
 
-        let _unknown = reader.read_u32_le()?;
+        let unknown = reader.read_u32_le()?;
         let max_image_count = reader.read_u32_le()?;
         let image_count = reader.read_u32_le()?;
         let bitmap_count = reader.read_u32_le()?;
@@ -70,6 +69,7 @@ impl SgFileMetadata {
             filename,
             file_size,
             version,
+            unknown,
             max_image_count,
             bitmap_records_without_system,
             total_file_size,
