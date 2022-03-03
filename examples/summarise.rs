@@ -1,7 +1,4 @@
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufReader, Result, stdin};
-use std::path::Path;
+use std::io::{Result, stdin};
 
 use sg_image_reader::{SgFileMetadata, VecImageBuilderFactory};
 
