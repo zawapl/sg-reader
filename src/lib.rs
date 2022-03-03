@@ -1,23 +1,23 @@
-//! A library for reading sg3 files used in Sierra city building games (Cesar 3, Pharaoh, Zeus, Emperor).
-//! Inspired by <https://github.com/lclarkmichalek/sgreader>.
+//! A library for reading sg3 files used in some Impressions Games city building games (Cesar 3, Pharaoh, Zeus, Emperor etc.).
 //!
-//! # Examples
+//! Documentation of the format can be found at https://github.com/bvschaik/citybuilding-tools/wiki/SG-file-format#image-data.
 //!
-//! Basic usage
+//! Basic usage:
 //! ```rust
-//! // Load metadata contained in the specified file
-//! let sg_file: SgFileMetadata = sg_reader::SgFileMetadata::load_metadata(path)?;
-//!
-//! // Load pixel data for all images listed in that file
-//! let images_raw_bytes: Vec<Vec<u8>> = sg_file.load_image_data(&sg_reader::VecImageBuilderFactory)?;
+//! let path = "path-to-file";
+//! let (sg_file, pixel_data): (SgFileMetadata, Vec<Vec<u8>>) = SgFileMetadata::load_fully(path, &VecImageBuilderFactory)?;
 //! ```
 //!
-//! The raw bytes can be used to construct required image structs.
-//! It is also possible to construct the required structs directly by implementing the [`ImageBuilderFactory`] trait and passing it instead of the [`VecImageBuilderFactory`].
+//! The basic example provides a vector of raw bytes for all the images.
+//! The raw bytes can be used to construct required image structs (with the image library of your choosing).
+//! It is also possible to construct the required images directly by implementing the [`ImageBuilderFactory`] trait and passing it instead of the [`VecImageBuilderFactory`].
 //!
-//! Pixel data can also be loaded for one image at a time:
+//! Pixel data can also be loaded for one image at a time, see `viewer` example for an example of that
 //! ```rust
-//! // Image we want to laod pixel data for
+//! // Load just the metadata
+//! let sg_file = SgFileMetadata::load_metadata(path)?;
+//!
+//! // Select the image we want to load pixel data for
 //! let image = &sg_file.images[11];
 //!
 //! // Get the path of the file where that data is located
@@ -29,16 +29,14 @@
 //! // Load pixel data for that specific image
 //! let pixel_data = image.load_image(&mut buf_reader, &VecImageBuilderFactory);
 //! ```
-//!
-//!
-mod sg_file;
-mod sg_bitmap;
-mod sg_image;
-mod image_builder;
-mod utils;
-
-pub use sg_file::SgFileMetadata;
-pub use sg_bitmap::SgBitmapMetadata;
-pub use sg_image::SgImageMetadata;
 pub use image_builder::*;
+pub use sg_bitmap::SgBitmapMetadata;
+pub use sg_file::SgFileMetadata;
+pub use sg_image::SgImageMetadata;
 pub(crate) use utils::*;
+
+mod image_builder;
+mod sg_bitmap;
+mod sg_file;
+mod sg_image;
+mod utils;

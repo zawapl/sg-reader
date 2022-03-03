@@ -6,9 +6,7 @@ use crate::utils::ReadHelper;
 
 /// Metadata of a bitmap.
 ///
-/// In this context a bitmap is a collection of images (terminology copied from other implementations).
-///
-/// All images in a bitmap have their data stored in the same file.
+/// In this context a bitmap is a group of images sharing the same file containing their pixel data.
 ///
 /// Some bytes from the metadata are of unknown meaning.
 #[derive(Debug, Clone, PartialEq, Default)]

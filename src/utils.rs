@@ -3,7 +3,6 @@ use std::io::Result;
 use std::str;
 
 pub trait ReadHelper {
-
     fn read_u8(&mut self) -> Result<u8>;
 
     fn read_u16_le(&mut self) -> Result<u16>;
@@ -14,12 +13,10 @@ pub trait ReadHelper {
 
     fn read_utf(&mut self, length: usize) -> Result<String>;
 
-    fn read_bytes<const LENGTH: usize>(&mut self) -> Result<[u8; LENGTH]> where [u8;LENGTH]: Default;
-    
+    fn read_bytes<const LENGTH: usize>(&mut self) -> Result<[u8; LENGTH]> where [u8; LENGTH]: Default;
 }
 
-impl <R: Read> ReadHelper for R {
-
+impl<R: Read> ReadHelper for R {
     fn read_u8(&mut self) -> Result<u8> {
         let mut tmp = [0; 1];
         self.read_exact(&mut tmp)?;
@@ -61,5 +58,4 @@ impl <R: Read> ReadHelper for R {
         self.read_exact(&mut result)?;
         return Ok(result);
     }
-
 }

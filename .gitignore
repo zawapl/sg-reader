@@ -12,3 +12,4 @@ Cargo.lock
 # IntaliJ folder
 .idea/
 
+/doc/

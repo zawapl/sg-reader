@@ -7,10 +7,9 @@ use std::vec::Vec;
 
 use druid::*;
 use druid::im::Vector;
-use druid::text::RichText;
 use druid::widget::{Button, Container, Flex, Image, Label, List, Scroll, Split, ViewSwitcher};
 
-use sg_reader::{SgFileMetadata, VecImageBuilderFactory};
+use sg_image_reader::{SgFileMetadata, VecImageBuilderFactory};
 
 use crate::piet::ImageFormat;
 
@@ -200,13 +199,13 @@ impl AppDelegate<AppData> for Delegate {
         }
 
         if let Some(image_id) = cmd.get(SELECT_IMAGE) {
-            if let(Some(LoadedFile(file))) = &data.loaded_file {
+            if let Some(LoadedFile(file)) = &data.loaded_file {
                 let image = &file.images[*image_id as usize];
                 let path = file.get_555_file_path(image.bitmap_id as usize, image.is_external());
                 let mut reader = BufReader::new(File::open(path).expect("Failed to open file."));
                 let pixels = image.load_image(&mut reader, &VecImageBuilderFactory).expect("Failed to get pixel data.");
                 data.current_image = Option::Some(*image_id as usize);
-                data.pixels =  Vector::from(pixels);
+                data.pixels = Vector::from(pixels);
                 return Handled::Yes;
             }
         }

@@ -1,5 +1,5 @@
 [package]
-name = "sg_reader"
+name = "sg_image_reader"
 description = "Library for reading images in sg3 files used by some citybuilding games."
 version = "0.0.1"
 authors = ["Jakub Zawadzki <kuba.zaw@gmail.com>"]
@@ -8,10 +8,7 @@ license = "MIT"
 repository = "https://github.com/zawapl/sg-reader"
 categories = []
 readme = "README.md"
-keywords = ["sg3"]
-
-[dependencies]
-
+keywords = ["sg3", "555"]
 
 [dev-dependencies]
 druid = { version = "0.7.0", features = [ "im" ] } # https://github.com/linebender/druid/tree/ed4f9ef0e763d8396ef2fb7facd8ea4ba541c41e

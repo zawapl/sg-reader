@@ -2,10 +2,7 @@
 ///
 /// Gets called internally to create a new builder for each encountered image.
 ///
-/// Can be used to create image structs matching the desired image library.
-///
-/// See [VecImageBuilderFactory] for basic implementation that creates a vector of bytes representing raw pixel data.
-///
+/// See [VecImageBuilderFactory] for a version that creates a vector of bytes representing raw pixel data.
 pub trait ImageBuilderFactory<T> {
     /// The type of the corresponding builder
     type Builder: ImageBuilder<T>;
@@ -15,6 +12,8 @@ pub trait ImageBuilderFactory<T> {
 }
 
 /// A trait for building an image from provided pixels.
+///
+/// The builder is used internally to set the pixels to the right values.
 ///
 /// See [VecImageBuilder] for basic implementation that creates a vector of bytes representing raw pixel data.
 pub trait ImageBuilder<T> {

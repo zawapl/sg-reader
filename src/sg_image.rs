@@ -14,6 +14,8 @@ const ISOMETRIC_LARGE_TILE_BYTES: u16 = 3200;
 
 /// Metadata of an image.
 ///
+/// Contains data about the type and dimensions of the image along with offsets of the pixel data.
+///
 /// Some bytes from the metadata are of unknown meaning.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SgImageMetadata {
@@ -99,7 +101,7 @@ impl SgImageMetadata {
         return Ok(sg_image);
     }
 
-    /// Checks if the image is marged as having its data in an external file.
+    /// Checks if the image is flagged as having its data in an external file.
     pub fn is_external(&self) -> bool {
         return self.flags[0] > 0;
     }

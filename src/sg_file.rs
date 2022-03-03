@@ -30,10 +30,9 @@ pub struct SgFileMetadata {
 }
 
 impl SgFileMetadata {
-
-    /// Load metadata from the given file.
-    pub fn load_metadata(path: &Path) -> Result<Self> {
-        let file = File::open(path)?;
+    /// Load metadata from the file founds on the given path.
+    pub fn load_metadata<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let file = File::open(path.as_ref())?;
         let metadata = file.metadata()?;
         let mut reader = BufReader::new(file);
 
@@ -61,8 +60,8 @@ impl SgFileMetadata {
 
         let images = Self::load_images_metadata(&mut reader, image_count, version >= 0xd6)?;
 
-        let folder = String::from(path.parent().unwrap().to_str().unwrap());
-        let filename = String::from(path.file_name().unwrap().to_str().unwrap());
+        let folder = String::from(path.as_ref().parent().unwrap().to_str().unwrap());
+        let filename = String::from(path.as_ref().file_name().unwrap().to_str().unwrap());
 
         let sg_file = SgFileMetadata {
             folder,
@@ -76,14 +75,14 @@ impl SgFileMetadata {
             file_size_555,
             file_size_external,
             bitmaps,
-            images
+            images,
         };
 
         return Ok(sg_file);
     }
 
-    /// Load metadata and pixel data from the given file.
-    pub fn load_fully<T, F: ImageBuilderFactory<T>>(path: &Path, image_builder_factory: &F) -> Result<(Self, Vec<T>)> {
+    /// Load metadata and pixel data.
+    pub fn load_fully<P: AsRef<Path>, T, F: ImageBuilderFactory<T>>(path: P, image_builder_factory: &F) -> Result<(Self, Vec<T>)> {
         let sg_file = Self::load_metadata(path)?;
 
         let images = sg_file.load_image_data(image_builder_factory)?;
@@ -116,7 +115,7 @@ impl SgFileMetadata {
     fn load_images_metadata<R: Read + Seek>(file: &mut BufReader<R>, image_records: u32, alpha: bool) -> Result<Vec<SgImageMetadata>> {
         let mut images: Vec<SgImageMetadata> = Vec::with_capacity(image_records as usize);
 
-        for i in 0..(image_records+1) {
+        for i in 0..(image_records + 1) {
             let mut image = SgImageMetadata::load(file, i, alpha)?;
 
             let invert_offset = image.invert_offset;
@@ -132,8 +131,7 @@ impl SgFileMetadata {
         return Ok(images);
     }
 
-    /// Load pixel data for all images.
-    pub fn load_image_data<T, F: ImageBuilderFactory<T>>(&self, image_factory_builder: &F) -> Result<Vec<T>> {
+    fn load_image_data<T, F: ImageBuilderFactory<T>>(&self, image_factory_builder: &F) -> Result<Vec<T>> {
         if self.images.is_empty() {
             return Ok(Vec::new());
         }
@@ -171,11 +169,6 @@ impl SgFileMetadata {
 
         let path_buf: PathBuf = [&self.folder, &filename].iter().collect();
 
-        if Path::new(&path_buf).exists() {
-            return path_buf
-        }
-
-        return [&self.folder, "555", &filename].iter().collect();
+        return path_buf
     }
-
 }
