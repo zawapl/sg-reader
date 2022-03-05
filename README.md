@@ -42,4 +42,4 @@ You can run `cargo run --example viewer` to open up an example application for v
 
 ---
 
-Currently, only tested with Zeus files.
+Tested with Zeus, Pharaoh and Emperor files.

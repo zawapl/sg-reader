@@ -9,11 +9,14 @@ fn run_example() -> Result<()> {
 
     stdin().read_line(&mut s)?;
 
-    let path = String::from(s.trim());
+    let path = String::from(s.trim()).replace("\"", "");
 
-    let (sg_file, _pixel_data) = SgFileMetadata::load_fully(path, &VecImageBuilderFactory)?;
+    println!("Reading {}", path);
 
-    println!("{:#?}", sg_file);
+
+    let (_sg_file, _pixel_data) = SgFileMetadata::load_fully(path, &VecImageBuilderFactory)?;
+
+    // println!("{:#?}", sg_file);
 
     return Ok(());
 }

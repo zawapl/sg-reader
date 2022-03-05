@@ -108,13 +108,6 @@ impl SgImageMetadata {
 
     /// Load pixel data for this image from the provided reader.
     pub fn load_image<T, F: ImageBuilderFactory<T>, R: Read + Seek>(&self, reader: &mut BufReader<R>, image_builder_factory: &F) -> Result<T> {
-        let current_position = reader.stream_position()?;
-
-        let relative_position = self.offset as i64 - self.flags[0] as i64 - current_position as i64;
-
-        if relative_position != 0 {
-            reader.seek_relative(relative_position)?;
-        }
 
         let mut image_builder = image_builder_factory.new_builder(self.width, self.height);
 
@@ -140,17 +133,24 @@ impl SgImageMetadata {
         return Ok(image_builder.build());
     }
 
-    fn load_plain_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut R) -> Result<()> {
-        // Check image data
-        if self.height as u32 * self.width as u32 * 2 != self.length {
-            return Err(Error::new(ErrorKind::Other, "Image data length doesn't match image size"));
+    fn load_plain_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>) -> Result<()> {
+        let current_position = reader.stream_position()?;
+
+        let relative_position = self.offset as i64 - self.flags[0] as i64 - current_position as i64;
+
+        if relative_position != 0 {
+            reader.seek_relative(relative_position)?;
         }
 
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let colour = reader.read_u16_le()?;
-                image_builder.set_555_pixel(x, y, colour);
-            }
+        // TODO move to verify?
+        // // Check image data
+        // if self.height as u32 * self.width as u32 * 2 != self.length {
+        //     return Err(Error::new(ErrorKind::Other, "Image data length doesn't match image size"));
+        // }
+
+        for position in 0..(self.length as usize)/2 {
+            let colour = reader.read_u16_le()?;
+            image_builder.set_555_pixel_by_pos(position, colour);
         }
 
         return Ok(());
@@ -166,7 +166,7 @@ impl SgImageMetadata {
         }
 
         self.load_isometric_base(image_builder, reader)?;
-        self.load_transparent_image(image_builder, reader, self.length - self.uncompressed_length, self.uncompressed_length + self.offset)?;
+        self.load_transparent_image(image_builder, reader, &(self.length - self.uncompressed_length))?;
         Ok(())
     }
 
@@ -179,7 +179,7 @@ impl SgImageMetadata {
 
         let mut y_offset = height_offset;
 
-        if ((width + 2) * height) as u32 != self.uncompressed_length {
+        if ((width as u32 + 2) * height as u32) != self.uncompressed_length {
             return Err(Error::new(ErrorKind::Other, "Data length doesn't match footprint size"));
         }
 
@@ -191,7 +191,7 @@ impl SgImageMetadata {
             };
 
             for _x in 0..x_lim {
-                Self::write_isometric_tile(image_builder, reader, x_offset, y_offset, tile_width, tile_height)?;
+                self.write_isometric_tile(image_builder, reader, x_offset as usize, y_offset as usize, tile_width as usize, tile_height as usize)?;
                 x_offset += tile_width + 2;
             }
 
@@ -210,7 +210,7 @@ impl SgImageMetadata {
             reader.seek_relative(relative_position)?;
         }
 
-        self.load_transparent_image(image_builder, reader, self.length, self.offset)?;
+        self.load_transparent_image(image_builder, reader, &self.length)?;
         Ok(())
     }
 
@@ -225,27 +225,36 @@ impl SgImageMetadata {
         return self.flags[3] as u16;
     }
 
-    fn write_isometric_tile<T, B: ImageBuilder<T>, R: Read + Seek>(image_builder: &mut B, reader: &mut R, offset_x: u16, offset_y: u16, tile_width: u16, tile_height: u16) -> Result<()> {
-        let half_height = tile_height / 2;
+    fn write_isometric_tile<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut R, offset_x: usize, offset_y: usize, tile_width: usize, tile_height: usize) -> Result<()> {
+        let half_height = (tile_height / 2) as usize;
 
-        for y in 0..half_height {
-            let start = tile_height - 2 * (y + 1);
-            let end = tile_width - start;
-            for x in start..end {
-                let r = reader.read_u8()? as u16;
-                let l = reader.read_u8()? as u16;
-                image_builder.set_555_pixel(offset_x + x, offset_y + y, l << 8 | r);
+        let mut x_start = tile_height;
+        let mut x_end = tile_width - x_start;
+        let mut position = offset_x + (offset_y * self.width as usize);
+        let skip = (self.width as usize) - tile_width;
+
+        for _y in 0..half_height {
+            x_start -=2;
+            x_end += 2;
+            position += x_start;
+            for _x in x_start..x_end {
+                let c = reader.read_u16_le()?;
+                image_builder.set_555_pixel_by_pos(position, c);
+                position += 1;
             }
+            position += x_start + skip;
         }
 
-        for y in half_height..tile_height {
-            let start = 2 * y - tile_height;
-            let end = tile_width - start;
-            for x in start..end {
-                let r = reader.read_u8()? as u16;
-                let l = reader.read_u8()? as u16;
-                image_builder.set_555_pixel(offset_x + x, offset_y + y, l << 8 | r);
+        for _y in half_height..tile_height {
+            position += x_start;
+            for _x in x_start..x_end {
+                let c = reader.read_u16_le()?;
+                image_builder.set_555_pixel_by_pos(position, c);
+                position += 1;
             }
+            position += x_start + skip;
+            x_start +=2;
+            x_end -= 2;
         }
 
         Ok(())
@@ -259,34 +268,24 @@ impl SgImageMetadata {
         }
     }
 
-    fn load_transparent_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>, length: u32, offset: u32) -> Result<()> {
-        let mut x = 0;
-        let mut y = 0;
-        let width = self.width;
+    fn load_transparent_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>, length: &u32) -> Result<()> {
+        let mut pos = 0;
+        let mut remaining_bytes = *length as usize;
 
-        while (reader.stream_position()? as u32) < length + offset {
-            let c = reader.read_u8()?;
+        while remaining_bytes > 0 {
+            let c = reader.read_u8()? as usize;
 
             if c == 255 {
                 // The next number is pixels to skip
-                x += reader.read_u8()? as u16;
-
-                // TODO Change the while to mods and divides?
-                while x >= width {
-                    y += 1;
-                    x -= width;
-                }
+                pos += reader.read_u8()? as usize;
+                remaining_bytes -= 2;
             } else {
+                remaining_bytes -= 1 + (c * 2);
                 // Pixels to fill in
                 for _j in 0..c {
-                    let r = reader.read_u8()? as u16;
-                    let l = reader.read_u8()? as u16;
-                    image_builder.set_555_pixel(x, y, l << 8 | r);
-                    x += 1;
-                    if x >= width {
-                        y += 1;
-                        x -= width;
-                    }
+                    let pixel = reader.read_u16_le()?;
+                    image_builder.set_555_pixel_by_pos(pos, pixel);
+                    pos += 1;
                 }
             }
         }
@@ -295,32 +294,23 @@ impl SgImageMetadata {
     }
 
     fn load_alpha_mask<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut R) -> Result<()> {
-        let mut x = 0;
-        let mut y = 0;
-        let width = self.width;
+        let mut pos = 0;
+        let mut remaining_bytes = self.alpha_length as usize;
 
-        while (reader.stream_position()? as u32) < (self.offset + self.length + self.alpha_length) {
-            let c = reader.read_u8()?;
+        while remaining_bytes > 0 {
+            let c = reader.read_u8()? as usize;
 
             if c == 255 {
                 // The next number is pixels to skip
-                x += reader.read_u8()? as u16;
-
-                // Change the while to mods and divides
-                while x >= width {
-                    y += 1;
-                    x -= width;
-                }
+                pos += reader.read_u8()? as usize;
+                remaining_bytes -= 2;
             } else {
                 // Pixels to fill in
+                remaining_bytes -= 1 + c;
                 for _j in 0..c {
                     let alpha = reader.read_u8()?;
-                    image_builder.set_alpha(x, y, alpha << 3);
-                    x += 1;
-                    if x >= width {
-                        y += 1;
-                        x = 0;
-                    }
+                    image_builder.set_alpha(pos, alpha << 3);
+                    pos += 1;
                 }
             }
         }

@@ -18,10 +18,10 @@ pub trait ImageBuilderFactory<T> {
 /// See [VecImageBuilder] for basic implementation that creates a vector of bytes representing raw pixel data.
 pub trait ImageBuilder<T> {
     /// Set the specified pixel to the given colour given as RGBA
-    fn set_pixel(&mut self, x: u16, y: u16, pixel: [u8; 4]);
+    fn set_pixel_by_pos(&mut self, position: usize, data: [u8; 4]);
 
     /// Set alpha on the specified pixel
-    fn set_alpha(&mut self, x: u16, y: u16, alpha: u8);
+    fn set_alpha(&mut self, position: usize, alpha: u8);
 
     /// Mirror each pixel horizontally
     fn flip_horizontal(&mut self);
@@ -56,13 +56,13 @@ pub struct VecImageBuilder {
 }
 
 impl ImageBuilder<Vec<u8>> for VecImageBuilder {
-    fn set_pixel(&mut self, x: u16, y: u16, pixel: [u8; 4]) {
-        let i = (x as usize + (self.width * y as usize)) * 4;
-        self.pixels[i..(i + 4)].clone_from_slice(&pixel);
+    fn set_pixel_by_pos(&mut self, position: usize, data: [u8; 4]) {
+        let i = position * 4;
+        self.pixels[i..(i + 4)].clone_from_slice(&data);
     }
 
-    fn set_alpha(&mut self, x: u16, y: u16, alpha: u8) {
-        let i = (x as usize + (self.width * y as usize)) * 4 + 3;
+    fn set_alpha(&mut self, position: usize, alpha: u8) {
+        let i = position * 4 + 3;
         self.pixels[i] = alpha;
     }
 
@@ -87,15 +87,16 @@ impl ImageBuilder<Vec<u8>> for VecImageBuilder {
 }
 
 pub(crate) trait ImageBuilderHelper<T> {
-    fn set_555_pixel(&mut self, x: u16, y: u16, colour: u16);
+    fn set_555_pixel_by_pos(&mut self, position: usize, colour: u16);
 }
 
 impl<T, B: ImageBuilder<T>> ImageBuilderHelper<T> for B {
-    fn set_555_pixel(&mut self, x: u16, y: u16, colour: u16) {
+    fn set_555_pixel_by_pos(&mut self, position: usize, colour: u16) {
         if colour == 0xf81f {
             return;
         }
 
+        // TODO verify lower bits do not need to be set
         let ones = 0xf8 as u8;
         let r = (colour >> 7) as u8 & ones;
         let g = (colour >> 2) as u8 & ones;
@@ -103,6 +104,6 @@ impl<T, B: ImageBuilder<T>> ImageBuilderHelper<T> for B {
 
         let data = [r, g, b, 0xff];
 
-        self.set_pixel(x, y, data);
+        self.set_pixel_by_pos(position, data);
     }
 }
