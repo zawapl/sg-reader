@@ -13,3 +13,4 @@ keywords = ["sg3", "555"]
 [dev-dependencies]
 druid = { version = "0.7.0", features = [ "im" ] } # https://github.com/linebender/druid/tree/ed4f9ef0e763d8396ef2fb7facd8ea4ba541c41e
 piet-common = { version = "0.3.2", features = ["png"] }
+image = { version = "0.24.1", features = ["png"] }

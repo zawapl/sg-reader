@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::{BufReader, Error, ErrorKind, Read, Seek};
+use std::io::{BufReader, Read, Seek};
 use std::io::Result;
 use std::path::{Path, PathBuf};
 
@@ -30,16 +30,11 @@ pub struct SgFileMetadata {
 }
 
 impl SgFileMetadata {
-    /// Load metadata from the file founds on the given path.
-    pub fn load_metadata<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let file = File::open(path.as_ref())?;
-        let metadata = file.metadata()?;
-        let mut reader = BufReader::new(file);
 
+    /// Load metadata from provided reader
+    pub fn load_metadata_from_reader<R: Read + Seek>(reader: &mut BufReader<R>, folder: String, filename: String) -> Result<Self> {
         let file_size = reader.read_u32_le()?;
         let version = reader.read_u32_le()?;
-
-        Self::check_header(&version, &file_size, &metadata.len())?;
 
         let unknown = reader.read_u32_le()?;
         let max_image_count = reader.read_u32_le()?;
@@ -54,14 +49,11 @@ impl SgFileMetadata {
 
         reader.seek_relative(640)?;
 
-        let bitmaps = Self::load_bitmaps_metadata(&mut reader, bitmap_count)?;
+        let bitmaps = Self::load_bitmaps_metadata(reader, bitmap_count)?;
 
         reader.seek_relative(200 * (max_bitmaps_records - bitmap_count) as i64)?;
 
-        let images = Self::load_images_metadata(&mut reader, image_count, version >= 0xd6)?;
-
-        let folder = String::from(path.as_ref().parent().unwrap().to_str().unwrap());
-        let filename = String::from(path.as_ref().file_name().unwrap().to_str().unwrap());
+        let images = Self::load_images_metadata(reader, image_count, version >= 0xd6)?;
 
         let sg_file = SgFileMetadata {
             folder,
@@ -81,28 +73,40 @@ impl SgFileMetadata {
         return Ok(sg_file);
     }
 
+    /// Load metadata from the file founds on the given path.
+    pub fn load_metadata_from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let file = File::open(path.as_ref())?;
+        let mut reader = BufReader::new(file);
+
+        let folder = String::from(path.as_ref().parent().unwrap().to_str().unwrap());
+        let filename = String::from(path.as_ref().file_name().unwrap().to_str().unwrap());
+
+        return Self::load_metadata_from_reader(&mut reader, folder, filename);
+    }
+
     /// Load metadata and pixel data.
     pub fn load_fully<P: AsRef<Path>, T, F: ImageBuilderFactory<T>>(path: P, image_builder_factory: &F) -> Result<(Self, Vec<T>)> {
-        let sg_file = Self::load_metadata(path)?;
+        let sg_file = Self::load_metadata_from_path(path)?;
 
         let images = sg_file.load_image_data(image_builder_factory)?;
 
         return Ok((sg_file, images));
     }
 
-    fn check_header(version: &u32, file_size: &u32, actual_file_size: &u64) -> Result<()> {
-        // SG2 file: FILE_SIZE = 74480 or 522680 (depending on whether it's a "normal" sg2 or an enemy sg2
-        if version == &0xd3 && !(file_size == &74480 || file_size == &522680) {
-            return Err(Error::new(ErrorKind::Other, "Wrong file size declared for a sg2 file"));
-        }
-
-        // SG3 file: FILE_SIZE = the actual size of the sg3 file
-        if (version == &0xd5 || version == &0xd6) && !(file_size == &74480 || actual_file_size == &(*file_size as u64)) {
-            return Err(Error::new(ErrorKind::Other, "Wrong file size of a sg3 file"));
-        }
-
-        return Ok(());
-    }
+    // TODO turn this into a separate validation call?
+    // fn check_header(version: &u32, file_size: &u32, actual_file_size: &u64) -> Result<()> {
+    //     // SG2 file: FILE_SIZE = 74480 or 522680 (depending on whether it's a "normal" sg2 or an enemy sg2
+    //     if version == &0xd3 && !(file_size == &74480 || file_size == &522680) {
+    //         return Err(Error::new(ErrorKind::Other, "Wrong file size declared for a sg2 file"));
+    //     }
+    //
+    //     // SG3 file: FILE_SIZE = the actual size of the sg3 file
+    //     if (version == &0xd5 || version == &0xd6) && !(file_size == &74480 || actual_file_size == &(*file_size as u64)) {
+    //         return Err(Error::new(ErrorKind::Other, "Wrong file size of a sg3 file"));
+    //     }
+    //
+    //     return Ok(());
+    // }
 
     fn load_bitmaps_metadata<R: Read + Seek>(reader: &mut BufReader<R>, bitmap_records: u32) -> Result<Vec<SgBitmapMetadata>> {
         let mut bitmaps = Vec::with_capacity(bitmap_records as usize);

@@ -1,4 +1,5 @@
 use std::io::{Result, stdin};
+use std::time::Instant;
 
 use sg_image_reader::{SgFileMetadata, VecImageBuilderFactory};
 
@@ -13,10 +14,12 @@ fn run_example() -> Result<()> {
 
     println!("Reading {}", path);
 
+    let start = Instant::now();
 
     let (_sg_file, _pixel_data) = SgFileMetadata::load_fully(path, &VecImageBuilderFactory)?;
 
-    // println!("{:#?}", sg_file);
+    let elapsed_time = start.elapsed();
+    println!("Finished in {}ms", elapsed_time.as_millis());
 
     return Ok(());
 }

@@ -178,7 +178,7 @@ impl AppDelegate<AppData> for Delegate {
         _env: &Env,
     ) -> Handled {
         if let Some(file_info) = cmd.get(commands::OPEN_FILE) {
-            match SgFileMetadata::load_metadata(file_info.path()) {
+            match SgFileMetadata::load_metadata_from_path(file_info.path()) {
                 Ok(sg_file) => {
                     data.images.clear();
 
