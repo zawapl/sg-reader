@@ -15,7 +15,7 @@ fn run() -> Result<()> {
 
     let paths = fs::read_dir(s.trim()).unwrap();
 
-    fs::remove_dir_all("./unpacked")?;
+    fs::remove_dir_all("./unpacked");
 
     for path in paths {
         if let Ok(dir) = path {
