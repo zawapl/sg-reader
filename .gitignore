@@ -13,3 +13,6 @@ Cargo.lock
 .idea/
 
 /doc/
+
+# Unpacked folder created by one of the examples
+/unpacked
