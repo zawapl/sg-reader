@@ -2,8 +2,10 @@
 //!
 //! Documentation of the format can be found at https://github.com/bvschaik/citybuilding-tools/wiki/SG-file-format#image-data.
 //!
-//! Basic usage:
+//! Simple usage:
 //! ```rust
+//! use sg_image_reader::{SgFileMetadata, VecImageBuilderFactory};
+//!
 //! let path = "path-to-file";
 //! let (sg_file, pixel_data): (SgFileMetadata, Vec<Vec<u8>>) = SgFileMetadata::load_fully(path, &VecImageBuilderFactory)?;
 //! ```
@@ -14,6 +16,10 @@
 //!
 //! Pixel data can also be loaded for one image at a time, see `viewer` example for an example of that
 //! ```rust
+//! use std::fs::File;
+//! use std::io::BufReader;
+//! use sg_image_reader::{SgFileMetadata, VecImageBuilderFactory};
+//!
 //! // Load just the metadata
 //! let sg_file = SgFileMetadata::load_metadata(path)?;
 //!
@@ -29,12 +35,14 @@
 //! // Load pixel data for that specific image
 //! let pixel_data = image.load_image(&mut buf_reader, &VecImageBuilderFactory);
 //! ```
+pub use error::{Result, SgImageError};
 pub use image_builder::*;
 pub use sg_bitmap::SgBitmapMetadata;
 pub use sg_file::SgFileMetadata;
 pub use sg_image::SgImageMetadata;
 pub(crate) use utils::*;
 
+mod error;
 mod image_builder;
 mod sg_bitmap;
 mod sg_file;

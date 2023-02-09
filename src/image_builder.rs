@@ -40,11 +40,7 @@ impl ImageBuilderFactory<Vec<u8>> for VecImageBuilderFactory {
         let width = width as usize;
         let height = height as usize;
         let pixels = vec![0; width * height * 4];
-        return VecImageBuilder {
-            width,
-            height,
-            pixels,
-        };
+        return VecImageBuilder { width, height, pixels };
     }
 }
 
@@ -96,7 +92,6 @@ impl<T, B: ImageBuilder<T>> ImageBuilderHelper<T> for B {
             return;
         }
 
-        // TODO verify lower bits do not need to be set
         let ones = 0xf8 as u8;
         let r = (colour >> 7) as u8 & ones;
         let g = (colour >> 2) as u8 & ones;

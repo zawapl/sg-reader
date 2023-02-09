@@ -1,11 +1,10 @@
+use crate::ReadHelper;
+use crate::Result;
+use crate::*;
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::{BufReader, Read, Seek};
-use std::io::Result;
+use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-
-use crate::*;
-use crate::ReadHelper;
 
 /// Metadata of a sg file.
 ///
@@ -30,7 +29,6 @@ pub struct SgFileMetadata {
 }
 
 impl SgFileMetadata {
-
     /// Load metadata from provided reader
     pub fn load_metadata_from_reader<R: Read + Seek>(reader: &mut BufReader<R>, folder: String, filename: String) -> Result<Self> {
         let file_size = reader.read_u32_le()?;
@@ -54,6 +52,10 @@ impl SgFileMetadata {
         reader.seek_relative(200 * (max_bitmaps_records - bitmap_count) as i64)?;
 
         let images = Self::load_images_metadata(reader, image_count, version >= 0xd6)?;
+
+        reader.seek(SeekFrom::End(0))?;
+
+        Self::validate_header(&version, &file_size, &reader.stream_position()?)?;
 
         let sg_file = SgFileMetadata {
             folder,
@@ -93,20 +95,19 @@ impl SgFileMetadata {
         return Ok((sg_file, images));
     }
 
-    // TODO turn this into a separate validation call?
-    // fn check_header(version: &u32, file_size: &u32, actual_file_size: &u64) -> Result<()> {
-    //     // SG2 file: FILE_SIZE = 74480 or 522680 (depending on whether it's a "normal" sg2 or an enemy sg2
-    //     if version == &0xd3 && !(file_size == &74480 || file_size == &522680) {
-    //         return Err(Error::new(ErrorKind::Other, "Wrong file size declared for a sg2 file"));
-    //     }
-    //
-    //     // SG3 file: FILE_SIZE = the actual size of the sg3 file
-    //     if (version == &0xd5 || version == &0xd6) && !(file_size == &74480 || actual_file_size == &(*file_size as u64)) {
-    //         return Err(Error::new(ErrorKind::Other, "Wrong file size of a sg3 file"));
-    //     }
-    //
-    //     return Ok(());
-    // }
+    fn validate_header(version: &u32, file_size: &u32, actual_file_size: &u64) -> Result<()> {
+        // SG2 file: FILE_SIZE = 74480 or 522680 (depending on whether it's a "normal" sg2 or an enemy sg2
+        if version == &0xd3 && !(file_size == &74480 || file_size == &522680) {
+            return Err(SgImageError::InvalidHeader);
+        }
+
+        // SG3 file: FILE_SIZE = the actual size of the sg3 file
+        if (version == &0xd5 || version == &0xd6) && !(file_size == &74480 || actual_file_size == &(*file_size as u64)) {
+            return Err(SgImageError::InvalidHeader);
+        }
+
+        return Ok(());
+    }
 
     fn load_bitmaps_metadata<R: Read + Seek>(reader: &mut BufReader<R>, bitmap_records: u32) -> Result<Vec<SgBitmapMetadata>> {
         let mut bitmaps = Vec::with_capacity(bitmap_records as usize);
@@ -173,6 +174,6 @@ impl SgFileMetadata {
 
         let path_buf: PathBuf = [&self.folder, &filename].iter().collect();
 
-        return path_buf
+        return path_buf;
     }
 }

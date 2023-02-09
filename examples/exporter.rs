@@ -1,10 +1,9 @@
-use std::io::{Result, stdin, Error, ErrorKind};
+use image::ColorType;
+use sg_image_reader::{SgFileMetadata, VecImageBuilderFactory};
 use std::fs;
+use std::io::{stdin, Error, ErrorKind, Result};
 use std::path::PathBuf;
 use std::time::Instant;
-use image::ColorType;
-
-use sg_image_reader::{SgFileMetadata, VecImageBuilderFactory};
 
 fn run() -> Result<()> {
     let mut s = String::new();
@@ -15,11 +14,13 @@ fn run() -> Result<()> {
 
     let paths = fs::read_dir(s.trim()).unwrap();
 
-    fs::remove_dir_all("./unpacked");
+    if let Err(_) = fs::remove_dir_all("./unpacked") {
+        println!("Failed to delete target folder");
+    }
 
     for path in paths {
         if let Ok(dir) = path {
-            if dir.path().as_path().extension().map_or_else(|| false, |ext| ext.eq("sg3") ) {
+            if dir.path().as_path().extension().map_or_else(|| false, |ext| ext.eq("sg3")) {
                 println!("Unpacking {:?}", dir.path());
                 let start = Instant::now();
                 let mut path_buf = PathBuf::new();

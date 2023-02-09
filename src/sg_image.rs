@@ -1,9 +1,8 @@
-use std::io::{Error, ErrorKind, Read, Seek};
-use std::io::BufReader;
-use std::io::Result;
-
 use crate::image_builder::{ImageBuilder, ImageBuilderFactory, ImageBuilderHelper};
-use crate::ReadHelper;
+use crate::Result;
+use crate::{ReadHelper, SgImageError};
+use std::io::BufReader;
+use std::io::{Read, Seek};
 
 const ISOMETRIC_TILE_WIDTH: u16 = 58;
 const ISOMETRIC_TILE_HEIGHT: u16 = 30;
@@ -68,8 +67,16 @@ impl SgImageMetadata {
         let unknown_e = reader.read_u8()?;
         let anim_speed_id = reader.read_u8()?;
         let unknown_f = reader.read_bytes()?;
-        let alpha_offset = if include_alpha { reader.read_u32_le()? } else { 0 };
-        let alpha_length = if include_alpha { reader.read_u32_le()? } else { 0 };
+        let alpha_offset = if include_alpha {
+            reader.read_u32_le()?
+        } else {
+            0
+        };
+        let alpha_length = if include_alpha {
+            reader.read_u32_le()?
+        } else {
+            0
+        };
 
         let sg_image = SgImageMetadata {
             id,
@@ -108,7 +115,6 @@ impl SgImageMetadata {
 
     /// Load pixel data for this image from the provided reader.
     pub fn load_image<T, F: ImageBuilderFactory<T>, R: Read + Seek>(&self, reader: &mut BufReader<R>, image_builder_factory: &F) -> Result<T> {
-
         let mut image_builder = image_builder_factory.new_builder(self.width, self.height);
 
         if self.width <= 0 || self.height <= 0 || self.length <= 0 {
@@ -119,7 +125,7 @@ impl SgImageMetadata {
             0 | 1 | 10 | 12 | 13 => self.load_plain_image(&mut image_builder, reader)?,
             30 => self.load_isometric_image(&mut image_builder, reader)?,
             256 | 257 | 276 => self.load_sprite_image(&mut image_builder, reader)?,
-            _ => return Err(Error::new(ErrorKind::Other, format!("Unrecognised image type: {}", self.image_type)))
+            _ => return Err(SgImageError::UnknownImageType(self.image_type)),
         }
 
         if self.alpha_length > 0 {
@@ -142,13 +148,12 @@ impl SgImageMetadata {
             reader.seek_relative(relative_position)?;
         }
 
-        // TODO move to verify?
-        // // Check image data
-        // if self.height as u32 * self.width as u32 * 2 != self.length {
-        //     return Err(Error::new(ErrorKind::Other, "Image data length doesn't match image size"));
-        // }
+        // Check image data
+        if self.height as u32 * self.width as u32 * 2 != self.length {
+            return Err(SgImageError::ImageDataLengthMismatch);
+        }
 
-        for position in 0..(self.length as usize)/2 {
+        for position in 0..(self.length as usize) / 2 {
             let colour = reader.read_u16_le()?;
             image_builder.set_555_pixel_by_pos(position, colour);
         }
@@ -167,6 +172,7 @@ impl SgImageMetadata {
 
         self.load_isometric_base(image_builder, reader)?;
         self.load_transparent_image(image_builder, reader, &(self.length - self.uncompressed_length))?;
+
         Ok(())
     }
 
@@ -180,7 +186,7 @@ impl SgImageMetadata {
         let mut y_offset = height_offset;
 
         if ((width as u32 + 2) * height as u32) != self.uncompressed_length {
-            return Err(Error::new(ErrorKind::Other, "Data length doesn't match footprint size"));
+            return Err(SgImageError::ImageDataLengthMismatch);
         }
 
         for y in 0..(size + size - 1) {
@@ -225,7 +231,15 @@ impl SgImageMetadata {
         return self.flags[3] as u16;
     }
 
-    fn write_isometric_tile<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut R, offset_x: usize, offset_y: usize, tile_width: usize, tile_height: usize) -> Result<()> {
+    fn write_isometric_tile<T, B: ImageBuilder<T>, R: Read + Seek>(
+        &self,
+        image_builder: &mut B,
+        reader: &mut R,
+        offset_x: usize,
+        offset_y: usize,
+        tile_width: usize,
+        tile_height: usize,
+    ) -> Result<()> {
         let half_height = (tile_height / 2) as usize;
 
         let mut x_start = tile_height;
@@ -234,7 +248,7 @@ impl SgImageMetadata {
         let skip = (self.width as usize) - tile_width;
 
         for _y in 0..half_height {
-            x_start -=2;
+            x_start -= 2;
             x_end += 2;
             position += x_start;
             for _x in x_start..x_end {
@@ -253,7 +267,7 @@ impl SgImageMetadata {
                 position += 1;
             }
             position += x_start + skip;
-            x_start +=2;
+            x_start += 2;
             x_end -= 2;
         }
 
@@ -265,7 +279,7 @@ impl SgImageMetadata {
             (ISOMETRIC_TILE_BYTES, ISOMETRIC_TILE_HEIGHT, ISOMETRIC_TILE_WIDTH)
         } else {
             (ISOMETRIC_LARGE_TILE_BYTES, ISOMETRIC_LARGE_TILE_HEIGHT, ISOMETRIC_LARGE_TILE_WIDTH)
-        }
+        };
     }
 
     fn load_transparent_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>, length: &u32) -> Result<()> {

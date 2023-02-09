@@ -1,5 +1,5 @@
+use crate::{Result, SgImageError};
 use std::io::Read;
-use std::io::Result;
 use std::str;
 
 pub trait ReadHelper {
@@ -13,7 +13,9 @@ pub trait ReadHelper {
 
     fn read_utf(&mut self, length: usize) -> Result<String>;
 
-    fn read_bytes<const LENGTH: usize>(&mut self) -> Result<[u8; LENGTH]> where [u8; LENGTH]: Default;
+    fn read_bytes<const LENGTH: usize>(&mut self) -> Result<[u8; LENGTH]>
+    where
+        [u8; LENGTH]: Default;
 }
 
 impl<R: Read> ReadHelper for R {
@@ -46,14 +48,16 @@ impl<R: Read> ReadHelper for R {
 
         self.read_exact(&mut tmp)?;
 
-        return Ok(String::from(
-            str::from_utf8(&tmp)
-                .expect("Bytes could not be translated into a UTF-8 string.")
-                .trim_end_matches(char::from(0))
-        ));
+        return match str::from_utf8(&tmp) {
+            Ok(str) => Ok(String::from(str.trim_end_matches(char::from(0)))),
+            Err(err) => Err(SgImageError::Utf8Error(err)),
+        };
     }
 
-    fn read_bytes<const LENGTH: usize>(&mut self) -> Result<[u8; LENGTH]> where [u8; LENGTH]: Default {
+    fn read_bytes<const LENGTH: usize>(&mut self) -> Result<[u8; LENGTH]>
+    where
+        [u8; LENGTH]: Default,
+    {
         let mut result: [u8; LENGTH] = Default::default();
         self.read_exact(&mut result)?;
         return Ok(result);

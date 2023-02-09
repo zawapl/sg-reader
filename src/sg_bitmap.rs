@@ -1,8 +1,7 @@
-use std::io::{BufReader, Read, Seek};
-use std::io::Result;
-use std::string::String;
-
 use crate::utils::ReadHelper;
+use crate::Result;
+use std::io::{BufReader, Read, Seek};
+use std::string::String;
 
 /// Metadata of a bitmap.
 ///
@@ -19,17 +18,17 @@ pub struct SgBitmapMetadata {
     pub num_images: u32,
     pub start_index: u32,
     pub end_index: u32,
-    pub image_id: u32, // u32 between start & end - id of an image?
-    pub unknown_a: u32, // unknown purpose
-    pub unknown_b: u32, // unknown purpose
-    pub unknown_c: u32, // unknown purpose
-    pub unknown_d: u32, // unknown purpose
-    pub image_width: u32, // real width? - correspnding to image width
-    pub image_height: u32, // real height? - corresponding to image height
-    pub file_size_555: u32, // if non-zero -> internal image
-    pub total_file_size: u32, // if non-zero -> internal image
-    pub file_size_external: u32,// if non-zero -> internal image
-    pub unknown_e: [u8; 24] // 24 unknown bytes
+    pub image_id: u32,           // u32 between start & end - id of an image?
+    pub unknown_a: u32,          // unknown purpose
+    pub unknown_b: u32,          // unknown purpose
+    pub unknown_c: u32,          // unknown purpose
+    pub unknown_d: u32,          // unknown purpose
+    pub image_width: u32,        // real width? - corresponding to image width
+    pub image_height: u32,       // real height? - corresponding to image height
+    pub file_size_555: u32,      // if non-zero -> internal image
+    pub total_file_size: u32,    // if non-zero -> internal image
+    pub file_size_external: u32, // if non-zero -> internal image
+    pub unknown_e: [u8; 24],     // 24 unknown bytes
 }
 
 impl SgBitmapMetadata {

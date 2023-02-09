@@ -1,7 +1,7 @@
 [package]
 name = "sg_image_reader"
-description = "Library for reading images in sg3 files used by some citybuilding games."
-version = "0.0.1"
+description = "Library for reading images in sg3 files used by Impression Games citybuilding games."
+version = "0.1.0"
 authors = ["Jakub Zawadzki <kuba.zaw@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -11,6 +11,6 @@ readme = "README.md"
 keywords = ["sg3", "555"]
 
 [dev-dependencies]
-druid = { version = "0.7.0", features = [ "im" ] } # https://github.com/linebender/druid/tree/ed4f9ef0e763d8396ef2fb7facd8ea4ba541c41e
-piet-common = { version = "0.3.2", features = ["png"] }
+druid = { version = "0.8.2", features = [ "im" ] } # https://github.com/linebender/druid/tree/ed4f9ef0e763d8396ef2fb7facd8ea4ba541c41e
+piet-common = { version = "0.6.2", features = ["png"] }
 image = { version = "0.24.1", features = ["png"] }

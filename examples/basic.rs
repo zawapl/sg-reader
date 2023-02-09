@@ -1,7 +1,7 @@
-use std::io::{Result, stdin};
-use std::time::Instant;
-
+use sg_image_reader::Result;
 use sg_image_reader::{SgFileMetadata, VecImageBuilderFactory};
+use std::io::stdin;
+use std::time::Instant;
 
 fn run_example() -> Result<()> {
     let mut s = String::new();
