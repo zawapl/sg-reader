@@ -40,7 +40,7 @@ impl ImageBuilderFactory<Vec<u8>> for VecImageBuilderFactory {
         let width = width as usize;
         let height = height as usize;
         let pixels = vec![0; width * height * 4];
-        return VecImageBuilder { width, height, pixels };
+        VecImageBuilder { width, height, pixels }
     }
 }
 
@@ -78,7 +78,7 @@ impl ImageBuilder<Vec<u8>> for VecImageBuilder {
     }
 
     fn build(self) -> Vec<u8> {
-        return self.pixels;
+        self.pixels
     }
 }
 
@@ -92,7 +92,7 @@ impl<T, B: ImageBuilder<T>> ImageBuilderHelper<T> for B {
             return;
         }
 
-        let ones = 0xf8 as u8;
+        let ones = 0xf8_u8;
         let r = (colour >> 7) as u8 & ones;
         let g = (colour >> 2) as u8 & ones;
         let b = (colour << 3) as u8 & ones;

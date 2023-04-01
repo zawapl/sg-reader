@@ -74,6 +74,6 @@ impl SgBitmapMetadata {
             unknown_e,
         };
 
-        return Ok(sg_bitmap_metadata);
+        Ok(sg_bitmap_metadata)
     }
 }

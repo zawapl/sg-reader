@@ -105,19 +105,19 @@ impl SgImageMetadata {
             alpha_length,
         };
 
-        return Ok(sg_image);
+        Ok(sg_image)
     }
 
     /// Checks if the image is flagged as having its data in an external file.
     pub fn is_external(&self) -> bool {
-        return self.flags[0] > 0;
+        self.flags[0] > 0
     }
 
     /// Load pixel data for this image from the provided reader.
     pub fn load_image<T, F: ImageBuilderFactory<T>, R: Read + Seek>(&self, reader: &mut BufReader<R>, image_builder_factory: &F) -> Result<T> {
         let mut image_builder = image_builder_factory.new_builder(self.width, self.height);
 
-        if self.width <= 0 || self.height <= 0 || self.length <= 0 {
+        if self.width == 0 || self.height == 0 || self.length == 0 {
             return Ok(image_builder.build());
         }
 
@@ -136,7 +136,7 @@ impl SgImageMetadata {
             image_builder.flip_horizontal();
         }
 
-        return Ok(image_builder.build());
+        Ok(image_builder.build())
     }
 
     fn load_plain_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>) -> Result<()> {
@@ -158,7 +158,7 @@ impl SgImageMetadata {
             image_builder.set_555_pixel_by_pos(position, colour);
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn load_isometric_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>) -> Result<()> {
@@ -228,7 +228,7 @@ impl SgImageMetadata {
                 return height / ISOMETRIC_LARGE_TILE_HEIGHT;
             }
         }
-        return self.flags[3] as u16;
+        self.flags[3] as u16
     }
 
     fn write_isometric_tile<T, B: ImageBuilder<T>, R: Read + Seek>(
@@ -240,7 +240,7 @@ impl SgImageMetadata {
         tile_width: usize,
         tile_height: usize,
     ) -> Result<()> {
-        let half_height = (tile_height / 2) as usize;
+        let half_height = tile_height / 2;
 
         let mut x_start = tile_height;
         let mut x_end = tile_width - x_start;
@@ -275,11 +275,11 @@ impl SgImageMetadata {
     }
 
     fn calculate_tile_size(size: &u16, height: &u16) -> (u16, u16, u16) {
-        return if ISOMETRIC_TILE_HEIGHT * size == *height {
+        if ISOMETRIC_TILE_HEIGHT * size == *height {
             (ISOMETRIC_TILE_BYTES, ISOMETRIC_TILE_HEIGHT, ISOMETRIC_TILE_WIDTH)
         } else {
             (ISOMETRIC_LARGE_TILE_BYTES, ISOMETRIC_LARGE_TILE_HEIGHT, ISOMETRIC_LARGE_TILE_WIDTH)
-        };
+        }
     }
 
     fn load_transparent_image<T, B: ImageBuilder<T>, R: Read + Seek>(&self, image_builder: &mut B, reader: &mut BufReader<R>, length: &u32) -> Result<()> {

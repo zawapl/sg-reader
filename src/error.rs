@@ -14,6 +14,6 @@ pub enum SgImageError {
 
 impl From<Error> for SgImageError {
     fn from(value: Error) -> Self {
-        return SgImageError::IoError(value);
+        SgImageError::IoError(value)
     }
 }

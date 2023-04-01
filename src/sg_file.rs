@@ -72,7 +72,7 @@ impl SgFileMetadata {
             images,
         };
 
-        return Ok(sg_file);
+        Ok(sg_file)
     }
 
     /// Load metadata from the file founds on the given path.
@@ -83,7 +83,7 @@ impl SgFileMetadata {
         let folder = String::from(path.as_ref().parent().unwrap().to_str().unwrap());
         let filename = String::from(path.as_ref().file_name().unwrap().to_str().unwrap());
 
-        return Self::load_metadata_from_reader(&mut reader, folder, filename);
+        Self::load_metadata_from_reader(&mut reader, folder, filename)
     }
 
     /// Load metadata and pixel data.
@@ -92,7 +92,7 @@ impl SgFileMetadata {
 
         let images = sg_file.load_image_data(image_builder_factory)?;
 
-        return Ok((sg_file, images));
+        Ok((sg_file, images))
     }
 
     fn validate_header(version: &u32, file_size: &u32, actual_file_size: &u64) -> Result<()> {
@@ -106,7 +106,7 @@ impl SgFileMetadata {
             return Err(SgImageError::InvalidHeader);
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn load_bitmaps_metadata<R: Read + Seek>(reader: &mut BufReader<R>, bitmap_records: u32) -> Result<Vec<SgBitmapMetadata>> {
@@ -114,7 +114,7 @@ impl SgFileMetadata {
         for i in 0..bitmap_records {
             bitmaps.push(SgBitmapMetadata::load(reader, i)?);
         }
-        return Ok(bitmaps);
+        Ok(bitmaps)
     }
 
     fn load_images_metadata<R: Read + Seek>(file: &mut BufReader<R>, image_records: u32, alpha: bool) -> Result<Vec<SgImageMetadata>> {
@@ -133,7 +133,7 @@ impl SgFileMetadata {
             images.push(image);
         }
 
-        return Ok(images);
+        Ok(images)
     }
 
     fn load_image_data<T, F: ImageBuilderFactory<T>>(&self, image_factory_builder: &F) -> Result<Vec<T>> {
@@ -159,7 +159,7 @@ impl SgFileMetadata {
             result.push(image.load_image(&mut reader, image_factory_builder)?);
         }
 
-        return Ok(result);
+        Ok(result)
     }
 
     /// Get path to the file containing pixel data for the given bitmap.
@@ -174,6 +174,6 @@ impl SgFileMetadata {
 
         let path_buf: PathBuf = [&self.folder, &filename].iter().collect();
 
-        return path_buf;
+        path_buf
     }
 }

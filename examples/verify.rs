@@ -18,7 +18,7 @@ fn run() -> Result<()> {
                 println!("Verifying {:?}", dir.path());
                 let start = Instant::now();
                 if let Err(err) = SgFileMetadata::load_fully(dir.path(), &VecImageBuilderFactory) {
-                    println!("Failed to load: {:?}", err);
+                    println!("Failed to load: {err:?}");
                 };
                 let elapsed_time = start.elapsed();
                 println!("Finished in {}ms", elapsed_time.as_millis());
@@ -26,7 +26,7 @@ fn run() -> Result<()> {
         }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 fn main() {

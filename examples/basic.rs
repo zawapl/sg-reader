@@ -10,9 +10,9 @@ fn run_example() -> Result<()> {
 
     stdin().read_line(&mut s)?;
 
-    let path = String::from(s.trim()).replace("\"", "");
+    let path = String::from(s.trim()).replace('\"', "");
 
-    println!("Reading {}", path);
+    println!("Reading {path}");
 
     let start = Instant::now();
 
@@ -21,7 +21,7 @@ fn run_example() -> Result<()> {
     let elapsed_time = start.elapsed();
     println!("Finished in {}ms", elapsed_time.as_millis());
 
-    return Ok(());
+    Ok(())
 }
 
 fn main() {

@@ -54,10 +54,8 @@ fn build_app() -> impl Widget<AppData> {
     let table = ViewSwitcher::new(
         |data: &AppData, _env| data.current_image,
         move |current_image, data: &AppData, _env| {
-            return Box::new(current_image.map_or_else(
-                || {
-                    return Scroll::new(Split::columns(Label::new(""), Label::new("")).split_point(0.5).draggable(false)).vertical();
-                },
+            Box::new(current_image.map_or_else(
+                || Scroll::new(Split::columns(Label::new(""), Label::new("")).split_point(0.5).draggable(false)).vertical(),
                 |image_id| {
                     if let Some(LoadedFile(file)) = &data.loaded_file {
                         let image = &file.images[image_id];
@@ -94,7 +92,7 @@ fn build_app() -> impl Widget<AppData> {
                         add_row("unknown_d", format!("{:?}", image.unknown_d));
                         add_row("unknown_e", format!("{:?}", image.unknown_e));
                         add_row("unknown_f", format!("{:?}", image.unknown_f));
-                        add_row("", format!(" "));
+                        add_row("", " ".to_string());
                         add_row("bitmap_id", format!("{:?}", bitmap.id));
                         add_row("external_filename", format!("{:?}", bitmap.external_filename));
                         add_row("comment", format!("{:?}", bitmap.comment));
@@ -114,7 +112,7 @@ fn build_app() -> impl Widget<AppData> {
                         add_row("unknown_c", format!("{:?}", bitmap.unknown_c));
                         add_row("unknown_d", format!("{:?}", bitmap.unknown_d));
                         add_row("unknown_e", format!("{:?}", bitmap.unknown_e));
-                        add_row("", format!(" "));
+                        add_row("", " ".to_string());
                         add_row("filename", format!("{:?}", file.filename));
                         add_row("file_size", format!("{:?}", file.file_size));
                         add_row("version", format!("{:?}", file.version));
@@ -129,7 +127,7 @@ fn build_app() -> impl Widget<AppData> {
                     }
                     panic!("Image is selected, but no file is loaded!");
                 },
-            ));
+            ))
         },
     );
 
@@ -137,7 +135,7 @@ fn build_app() -> impl Widget<AppData> {
     let image_widget = ViewSwitcher::new(
         |data: &AppData, _env| data.current_image,
         move |current_image, data: &AppData, _env| {
-            return Box::new(current_image.map_or_else(
+            Box::new(current_image.map_or_else(
                 || Label::new("No image selected").center(),
                 |image_id| {
                     if let Some(LoadedFile(file)) = &data.loaded_file {
@@ -154,13 +152,13 @@ fn build_app() -> impl Widget<AppData> {
                     }
                     panic!("Image is selected, but no file is loaded!");
                 },
-            ));
+            ))
         },
     );
 
     let right = Split::columns(image_widget, table).split_point(0.9).bar_size(5.0).draggable(true).min_size(10.0, 300.0);
 
-    return Container::new(Split::columns(left, right).split_point(0.1).bar_size(5.0).draggable(true).min_size(200.0, 200.0));
+    Container::new(Split::columns(left, right).split_point(0.1).bar_size(5.0).draggable(true).min_size(200.0, 200.0))
 }
 
 impl AppDelegate<AppData> for Delegate {
@@ -180,7 +178,7 @@ impl AppDelegate<AppData> for Delegate {
                     data.current_image = Option::None;
                 }
                 Err(e) => {
-                    println!("Error opening file: {:?}", e);
+                    println!("Error opening file: {e:?}");
                 }
             }
             return Handled::Yes;
@@ -204,7 +202,7 @@ impl AppDelegate<AppData> for Delegate {
 
 pub fn main() {
     fn title(app_data: &AppData, _env: &druid::Env) -> String {
-        return app_data.title.clone();
+        app_data.title.clone()
     }
 
     let window = WindowDesc::new(build_app()).title(title);
@@ -218,16 +216,16 @@ pub fn main() {
 
 impl Lens<AppData, Option<LoadedFile>> for LoadedFile {
     fn with<V, F: FnOnce(&Option<LoadedFile>) -> V>(&self, data: &AppData, f: F) -> V {
-        return f(&data.loaded_file);
+        f(&data.loaded_file)
     }
 
     fn with_mut<V, F: FnOnce(&mut Option<LoadedFile>) -> V>(&self, data: &mut AppData, f: F) -> V {
-        return f(&mut data.loaded_file);
+        f(&mut data.loaded_file)
     }
 }
 
 impl Data for LoadedFile {
     fn same(&self, other: &Self) -> bool {
-        return self.0.eq(&other.0);
+        self.0.eq(&other.0)
     }
 }

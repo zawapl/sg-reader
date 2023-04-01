@@ -29,19 +29,19 @@ fn run() -> Result<()> {
                 fs::create_dir_all(path_buf.clone())?;
 
                 match SgFileMetadata::load_fully(dir.path(), &VecImageBuilderFactory) {
-                    Err(err) => println!("Failed to load: {:?}", err),
+                    Err(err) => println!("Failed to load: {err:?}"),
                     Ok((sg_file, pixels)) => {
                         for i in 0..pixels.len() {
                             let image = &sg_file.images[i];
-                            let width = image.width.clone() as u32;
-                            let height = image.height.clone() as u32;
+                            let width = image.width as u32;
+                            let height = image.height as u32;
 
                             if width == 0 || height == 0 {
                                 continue;
                             }
 
                             let mut file_path = path_buf.clone();
-                            file_path.push(format!("{}", i));
+                            file_path.push(format!("{i}"));
                             file_path.set_extension("png");
 
                             let result = image::save_buffer(file_path, &pixels[i], width, height, ColorType::Rgba8);
@@ -56,7 +56,7 @@ fn run() -> Result<()> {
         }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 fn main() {
